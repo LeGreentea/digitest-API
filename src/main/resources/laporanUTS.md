@@ -1,367 +1,4 @@
 ```java
-package com.polstatstis.digiexam.entity;
-
-import jakarta.persistence.*;
-import lombok.*;
-
-import java.time.LocalDateTime;
-import java.util.List;
-
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-@Entity
-@Table(name = "exams")
-public class Exam {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @Column(nullable = false)
-    private String title;
-
-    @Column(nullable = false)
-    private String description;
-
-    @Column(nullable = false)
-    private LocalDateTime date;
-
-    @ElementCollection
-    @CollectionTable(name = "exam_questions", joinColumns = @JoinColumn(name = "exam_id"))
-    @Column(name = "question_id")
-    private List<Long> questions;
-
-    @ManyToOne
-    @JoinColumn(name = "created_by", nullable = false)
-    private User createdBy;
-}
-
-```
-
-```java
-package com.polstatstis.digiexam.entity;
-
-import jakarta.persistence.*;
-import lombok.*;
-
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-@Entity
-@Table(name = "exam_results")
-public class ExamResult {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
-
-    @ManyToOne
-    @JoinColumn(name = "exam_id", nullable = false)
-    private Exam exam;
-
-    @Column(nullable = false)
-    private Integer score;
-}
-```
-
-```java
-package com.polstatstis.digiexam.entity;
-
-import jakarta.persistence.*;
-import lombok.*;
-
-import java.util.List;
-
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-@Entity
-@Table(name = "questions")
-public class Question {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @Column(nullable = false)
-    private String text;
-
-    @ElementCollection
-    @CollectionTable(
-            name = "question_options",
-            joinColumns = @JoinColumn(name = "question_id")
-    )
-    @Column(name = "option_text")  // Diubah dari 'option' menjadi 'option_text'
-    private List<String> options;
-
-    @Column(nullable = false)
-    private String answer;
-
-    @ManyToOne
-    @JoinColumn(name = "created_by", nullable = false)
-    private User createdBy;
-}
-```
-
-```java
-package com.polstatstis.digiexam.entity;
-
-import jakarta.persistence.*;
-import lombok.*;
-
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-@Entity
-@Table(name = "users")
-public class User {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @Column(nullable = false, unique = true)
-    private String email;
-
-    @Column(nullable = false)
-    private String password;
-
-    @Column(nullable = false)
-    private String name;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private Role role;
-
-    public enum Role {
-        ADMIN, USER
-    }
-}
-```
-
-```java
-package com.polstatstis.digiexam.repository;
-
-import com.polstatstis.digiexam.entity.Exam;
-import org.springframework.data.jpa.repository.JpaRepository;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-
-import java.util.List;
-
-public interface ExamRepository extends JpaRepository<Exam, Long> {
-    @Operation(summary = "Find exams created by a user")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Found exams created by the user",
-                    content = {@Content(mediaType = "application/json",
-                            schema = @Schema(implementation = Exam.class))}),
-            @ApiResponse(responseCode = "404", description = "No exams found",
-                    content = @Content)})
-
-    List<Exam> findByCreatedById(Long userId);
-}
-```
-
-```java
-package com.polstatstis.digiexam.repository;
-
-import com.polstatstis.digiexam.entity.ExamResult;
-import org.springframework.data.jpa.repository.JpaRepository;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-
-import java.util.List;
-
-public interface ExamResultRepository extends JpaRepository<ExamResult, Long> {
-    @Operation(summary = "Find exam results by user ID")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Found exam results",
-                    content = { @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ExamResult.class)) }),
-            @ApiResponse(responseCode = "404", description = "Exam results not found",
-                    content = @Content) })
-
-    List<ExamResult> findByUserId(Long userId);
-
-    @Operation(summary = "Find exam results by exam ID")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Found exam results",
-                    content = { @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ExamResult.class)) }),
-            @ApiResponse(responseCode = "404", description = "Exam results not found",
-                    content = @Content) })
-
-    List<ExamResult> findByExamId(Long examId);
-}
-```
-
-```java
-package com.polstatstis.digiexam.repository;
-
-import com.polstatstis.digiexam.entity.Question;
-import org.springframework.data.jpa.repository.JpaRepository;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-
-import java.util.List;
-
-public interface QuestionRepository extends JpaRepository<Question, Long> {
-    @Operation(summary = "Find questions by user ID")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Found questions",
-                    content = {@Content(mediaType = "application/json",
-                            schema = @Schema(implementation = Question.class))}),
-            @ApiResponse(responseCode = "404", description = "Questions not found",
-                    content = @Content)})
-
-    List<Question> findByCreatedById(Long userId);
-}
-
-```
-
-```java
-package com.polstatstis.digiexam.repository;
-
-import com.polstatstis.digiexam.entity.User;
-import org.springframework.data.jpa.repository.JpaRepository;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-
-import java.util.Optional;
-
-public interface UserRepository extends JpaRepository<User, Long> {
-
-    @Operation(summary = "Find user by email", description = "Returns a single user by email", tags = { "user" })
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "successful operation", content = @Content(schema = @Schema(implementation = User.class))),
-            @ApiResponse(responseCode = "404", description = "User not found") })
-
-    Optional<User> findByEmail(String email);
-}
-```
-
-```java
-package com.polstatstis.digiexam.dto;
-
-import lombok.*;
-
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class UserDTO {
-
-    private Long id;
-    private String email;
-    private String name;
-    private String role;
-}
-```
-
-```java
-package com.polstatstis.digiexam.dto;
-
-import lombok.*;
-
-import java.time.LocalDateTime;
-import java.util.List;
-
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class ExamDTO {
-
-    private Long id;
-    private String title;
-    private String description;
-    private LocalDateTime date;
-    private List<Long> questionIds;
-    private Long createdById;
-}
-```
-
-```java
-package com.polstatstis.digiexam.mapper;
-
-import com.polstatstis.digiexam.dto.UserDTO;
-import com.polstatstis.digiexam.entity.User;
-
-public class UserMapper {
-
-    public static UserDTO toDTO(User user) {
-        return UserDTO.builder()
-                .id(user.getId())
-                .email(user.getEmail())
-                .name(user.getName())
-                .role(user.getRole().name())
-                .build();
-    }
-
-    public static User toEntity(UserDTO userDTO) {
-        return User.builder()
-                .id(userDTO.getId())
-                .email(userDTO.getEmail())
-                .name(userDTO.getName())
-                .role(User.Role.valueOf(userDTO.getRole()))
-                .build();
-    }
-}
-```
-
-```java
-package com.polstatstis.digiexam.mapper;
-
-import com.polstatstis.digiexam.dto.ExamDTO;
-import com.polstatstis.digiexam.entity.Exam;
-
-public class ExamMapper {
-
-    public static ExamDTO toDTO(Exam exam) {
-        return ExamDTO.builder()
-                .id(exam.getId())
-                .title(exam.getTitle())
-                .description(exam.getDescription())
-                .date(exam.getDate())
-                .questionIds(exam.getQuestions())
-                .createdById(exam.getCreatedBy().getId())
-                .build();
-    }
-
-    public static Exam toEntity(ExamDTO examDTO) {
-        return Exam.builder()
-                .id(examDTO.getId())
-                .title(examDTO.getTitle())
-                .description(examDTO.getDescription())
-                .date(examDTO.getDate())
-                .questions(examDTO.getQuestionIds())
-                .build();
-    }
-}
-```
-
-```java
 package com.polstatstis.digiexam.service;
 
 import com.polstatstis.digiexam.dto.UserLoginDTO;
@@ -371,10 +8,12 @@ import com.polstatstis.digiexam.entity.User;
 import com.polstatstis.digiexam.exception.UserNotFoundException;
 import com.polstatstis.digiexam.mapper.UserMapper;
 import com.polstatstis.digiexam.repository.UserRepository;
+import com.polstatstis.digiexam.security.JwtService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 @RequiredArgsConstructor
@@ -382,26 +21,44 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final JwtUtil jwtUtil;
+    private final JwtService jwtService;
+    private static final Logger logger = LoggerFactory.getLogger(AuthService.class);
 
     public UserDTO register(UserRegistrationDTO registrationDTO) {
+        // Validasi email sudah terdaftar
+        if (userRepository.existsByEmail(registrationDTO.getEmail().trim().toLowerCase())) {
+            throw new IllegalArgumentException("Email already registered");
+        }
+
         User user = User.builder()
-                .email(registrationDTO.getEmail())
+                .email(registrationDTO.getEmail().trim().toLowerCase())
                 .password(passwordEncoder.encode(registrationDTO.getPassword()))
                 .name(registrationDTO.getName())
                 .role(User.Role.USER)
                 .build();
-        userRepository.save(user);
-        return UserMapper.toDTO(user);
+
+        User savedUser = userRepository.save(user);
+        logger.info("User registered successfully: {}", savedUser.getEmail());
+        return UserMapper.toDTO(savedUser);
     }
 
     public String login(UserLoginDTO loginDTO) {
-        User user = userRepository.findByEmail(loginDTO.getEmail())
-                .orElseThrow(() -> new UserNotFoundException("User not found"));
+        String email = loginDTO.getEmail().trim().toLowerCase();
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> {
+                    logger.error("Login attempt failed: User not found with email: {}", email);
+                    return new UserNotFoundException("User not found");
+                });
+
         if (!passwordEncoder.matches(loginDTO.getPassword(), user.getPassword())) {
+            logger.error("Login attempt failed: Invalid password for user: {}", email);
             throw new IllegalArgumentException("Invalid password");
         }
-        return jwtUtil.generateToken(user);
+
+        String token = jwtService.generateToken(user.getEmail());
+        logger.info("User logged in successfully: {}", email);
+        return token;
     }
 }
 ```
@@ -409,12 +66,14 @@ public class AuthService {
 ```java
 package com.polstatstis.digiexam.service;
 
+import com.polstatstis.digiexam.dto.ChangePasswordDTO;
 import com.polstatstis.digiexam.dto.UserDTO;
 import com.polstatstis.digiexam.entity.User;
 import com.polstatstis.digiexam.mapper.UserMapper;
 import com.polstatstis.digiexam.repository.UserRepository;
 import com.polstatstis.digiexam.exception.UserNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -422,6 +81,7 @@ import org.springframework.stereotype.Service;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     public UserDTO getUserProfile(Long userId) {
         User user = userRepository.findById(userId)
@@ -438,6 +98,41 @@ public class UserService {
         return UserMapper.toDTO(user);
     }
 
+    public UserDTO changeUserRole(Long id, UserDTO userDTO) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Konversi String ke enum Role
+        User.Role newRole;
+        try {
+            newRole = User.Role.valueOf(userDTO.getRole().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Invalid role: " + userDTO.getRole());
+        }
+
+        // Ubah role pengguna
+        user.setRole(newRole);
+
+        // Simpan perubahan ke database
+        userRepository.save(user);
+
+        // Kembalikan userDTO yang telah diperbarui
+        userDTO.setId(user.getId());
+        return userDTO;
+    }
+
+    public void changePassword(Long userId, ChangePasswordDTO changePasswordDTO) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
+
+        if (!passwordEncoder.matches(changePasswordDTO.getOldPassword(), user.getPassword())) {
+            throw new IllegalArgumentException("Invalid old password");
+        }
+
+        user.setPassword(passwordEncoder.encode(changePasswordDTO.getNewPassword()));
+        userRepository.save(user);
+    }
+
     public void deleteUser(Long userId) {
         if (!userRepository.existsById(userId)) {
             throw new UserNotFoundException("User not found");
@@ -451,14 +146,25 @@ public class UserService {
 package com.polstatstis.digiexam.service;
 
 import com.polstatstis.digiexam.dto.ExamDTO;
+import com.polstatstis.digiexam.dto.ExamResultDTO;
+import com.polstatstis.digiexam.dto.ExamSubmissionDTO;
 import com.polstatstis.digiexam.entity.Exam;
+import com.polstatstis.digiexam.entity.User;
+import com.polstatstis.digiexam.exception.UserNotFoundException;
 import com.polstatstis.digiexam.mapper.ExamMapper;
 import com.polstatstis.digiexam.repository.ExamRepository;
 import com.polstatstis.digiexam.exception.ExamNotFoundException;
+import com.polstatstis.digiexam.repository.UserRepository;
+import com.polstatstis.digiexam.repository.ExamResultRepository;
+import com.polstatstis.digiexam.repository.QuestionRepository;
+import com.polstatstis.digiexam.entity.ExamResult;
+import com.polstatstis.digiexam.entity.Question;
+import com.polstatstis.digiexam.dto.AnswerDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -466,12 +172,20 @@ import java.util.stream.Collectors;
 public class ExamService {
 
     private final ExamRepository examRepository;
+    private final QuestionRepository questionRepository;
+    private final UserRepository userRepository;
+    private final ExamResultRepository examResultRepository;
 
-    public ExamDTO createExam(ExamDTO examDTO) {
-        Exam exam = ExamMapper.toEntity(examDTO);
-        examRepository.save(exam);
-        return ExamMapper.toDTO(exam);
-    }
+        public ExamDTO createExam(ExamDTO examDTO, Long userId) {
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new UserNotFoundException("User not found"));
+
+            Exam exam = ExamMapper.toEntity(examDTO);
+            exam.setCreatedBy(user); // Set createdBy sebelum menyimpan
+
+            examRepository.save(exam);
+            return ExamMapper.toDTO(exam);
+        }
 
     public List<ExamDTO> getAllExams() {
         return examRepository.findAll().stream()
@@ -491,6 +205,227 @@ public class ExamService {
         }
         examRepository.deleteById(examId);
     }
+
+    public ExamResultDTO submitExam(Long examId, ExamSubmissionDTO submission) {
+        User user = userRepository.findById(submission.getUserId())
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
+        Exam exam = examRepository.findById(examId)
+                .orElseThrow(() -> new ExamNotFoundException("Exam not found"));
+
+        Map<Long, String> correctAnswers = questionRepository.findAllById(
+                submission.getAnswers().stream()
+                        .map(AnswerDTO::getQuestionId)
+                        .collect(Collectors.toList())
+        ).stream().collect(Collectors.toMap(Question::getId, Question::getAnswer));
+
+        int score = 0;
+        for (AnswerDTO answer : submission.getAnswers()) {
+            if (correctAnswers.get(answer.getQuestionId()).equals(answer.getAnswer())) {
+                score++;
+            }
+        }
+
+        ExamResult examResult = ExamResult.builder()
+                .user(user)
+                .exam(exam)
+                .score(score)
+                .build();
+
+        examResultRepository.save(examResult);
+        return new ExamResultDTO(examResult.getId(), user.getId(), exam.getId(), score);
+    }
+}
+```
+
+```java
+package com.polstatstis.digiexam.controller;
+
+import com.polstatstis.digiexam.dto.ChangePasswordDTO;
+import com.polstatstis.digiexam.dto.UserDTO;
+import com.polstatstis.digiexam.service.UserService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+
+@RestController
+@RequestMapping("/api/users")
+@RequiredArgsConstructor
+public class UserController {
+
+    private final UserService userService;
+
+    @Operation(summary = "Mendapatkan profil pengguna")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Found the user",
+            content = { @Content(mediaType = "application/json",
+                schema = @Schema(implementation = UserDTO.class)) }),
+        @ApiResponse(responseCode = "404", description = "User not found",
+            content = @Content) })
+
+    @GetMapping("/{id}")
+    public ResponseEntity<UserDTO> getUserProfile(@PathVariable Long id) {
+        UserDTO user = userService.getUserProfile(id);
+        return ResponseEntity.ok(user);
+    }
+
+    @Operation(summary = "Update profil pengguna")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "User profile updated",
+            content = { @Content(mediaType = "application/json",
+                schema = @Schema(implementation = UserDTO.class)) }),
+        @ApiResponse(responseCode = "404", description = "User not found",
+            content = @Content) })
+
+    @PutMapping("/{id}")
+    public ResponseEntity<UserDTO> updateUserProfile(@PathVariable Long id, @RequestBody UserDTO userDTO) {
+        UserDTO updatedUser = userService.updateUserProfile(id, userDTO);
+        return ResponseEntity.ok(updatedUser);
+    }
+
+    @Operation(summary = "Mengganti password oleh pengguna")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Password changed successfully",
+                    content = { @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = UserDTO.class)) }),
+            @ApiResponse(responseCode = "400", description = "Invalid old password",
+                    content = @Content),
+            @ApiResponse(responseCode = "404", description = "User not found",
+                    content = @Content) })
+
+    @PutMapping("/{id}/change-password")
+    public ResponseEntity<Void> changePassword(@PathVariable Long id, @RequestBody ChangePasswordDTO changePasswordDTO) {
+        userService.changePassword(id, changePasswordDTO);
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(summary = "Delete user oleh admin")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "204", description = "User deleted",
+            content = @Content),
+        @ApiResponse(responseCode = "404", description = "User not found",
+            content = @Content) })
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
+        userService.deleteUser(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "Mengubah role pengguna oleh admin")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "User role changed successfully",
+                    content = { @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = UserDTO.class)) }),
+            @ApiResponse(responseCode = "404", description = "User not found",
+                    content = @Content) })
+
+    @PutMapping("/{id}/role")
+    public ResponseEntity<UserDTO> changeUserRole(@PathVariable Long id, @RequestBody UserDTO userDTO) {
+        UserDTO updatedUser = userService.changeUserRole(id, userDTO);
+        return ResponseEntity.ok(updatedUser);
+    }
+}
+```
+
+```java
+package com.polstatstis.digiexam.controller;
+
+import com.polstatstis.digiexam.dto.ExamDTO;
+import com.polstatstis.digiexam.dto.ExamResultDTO;
+import com.polstatstis.digiexam.dto.ExamSubmissionDTO;
+import com.polstatstis.digiexam.service.ExamService;
+import io.swagger.v3.oas.annotations.Operation;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/exams")
+@RequiredArgsConstructor
+public class ExamController {
+
+    private final ExamService examService;
+
+    @Operation(summary = "buat ujian baru oleh dosen")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Exam created successfully"),
+        @ApiResponse(responseCode = "400", description = "Invalid input"),
+        @ApiResponse(responseCode = "500", description = "Server error")
+    })
+
+    @PreAuthorize("hasRole('LECTURER')")
+    @PostMapping
+    public ResponseEntity<ExamDTO> createExam(@RequestBody ExamDTO examDTO, @RequestParam Long userId) {
+        ExamDTO createdExam = examService.createExam(examDTO, userId);
+        return ResponseEntity.ok(createdExam);
+    }
+
+    @Operation(summary = "mendapatkan semua ujian")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Exams retrieved successfully"),
+        @ApiResponse(responseCode = "500", description = "Server error")
+    })
+
+    @GetMapping
+    public ResponseEntity<List<ExamDTO>> getAllExams() {
+        List<ExamDTO> exams = examService.getAllExams();
+        return ResponseEntity.ok(exams);
+    }
+
+    @Operation(summary = "mendapatkan ujian berdasarkan id")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Exam retrieved successfully"),
+        @ApiResponse(responseCode = "404", description = "Exam not found"),
+        @ApiResponse(responseCode = "500", description = "Server error")
+    })
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ExamDTO> getExamById(@PathVariable Long id) {
+        ExamDTO exam = examService.getExamById(id);
+        return ResponseEntity.ok(exam);
+    }
+
+    @Operation(summary = "menghapus ujian oleh dosen")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Exam updated successfully"),
+        @ApiResponse(responseCode = "404", description = "Exam not found"),
+        @ApiResponse(responseCode = "500", description = "Server error")
+    })
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteExam(@PathVariable Long id) {
+        examService.deleteExam(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "Submit ujian oleh mahasiswa")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Exam submitted successfully",
+                    content = { @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ExamResultDTO.class)) }),
+            @ApiResponse(responseCode = "404", description = "Exam or User not found",
+                    content = @Content)
+    })
+
+    @PostMapping("/{id}/submit")
+    public ResponseEntity<ExamResultDTO> submitExam(@PathVariable Long id, @RequestBody ExamSubmissionDTO submission) {
+        ExamResultDTO result = examService.submitExam(id, submission);
+        return ResponseEntity.ok(result);
+    }
 }
 ```
 
@@ -501,10 +436,12 @@ import com.polstatstis.digiexam.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -517,6 +454,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
+@EnableGlobalMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -528,10 +466,12 @@ public class SecurityConfig {
                 .csrf().disable()
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and()
-                .authorizeHttpRequests()
-                .requestMatchers("/api/auth/**", "/docs/**").permitAll()
-                .anyRequest().authenticated()
-                .and()
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/docs/**").permitAll()
+                        .requestMatchers("/api/questions/**").hasAnyRole("ADMIN, LECTURER")
+                        .anyRequest().authenticated()
+                )
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
@@ -553,9 +493,11 @@ public class SecurityConfig {
 
     @Bean
     public AuthenticationManager authenticationManager(HttpSecurity http) throws Exception {
-        AuthenticationManagerBuilder builder = http.getSharedObject(AuthenticationManagerBuilder.class);
-        builder.userDetailsService(userDetailsService).passwordEncoder(passwordEncoder());
-        return builder.build();
+        return http.getSharedObject(AuthenticationManagerBuilder.class)
+                .userDetailsService(userDetailsService)
+                .passwordEncoder(passwordEncoder())
+                .and()
+                .build();
     }
 }
 ```
@@ -563,53 +505,64 @@ public class SecurityConfig {
 ```java
 package com.polstatstis.digiexam.security;
 
-import com.polstatstis.digiexam.entity.User;
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
+import jakarta.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 
+import java.util.Base64;
 import java.util.Date;
 
-@Component
-@RequiredArgsConstructor
-public class JwtUtil {
+@Service
+public class JwtService {
+    @Value("${jwt.secret}")
+    private String secretKey;
 
-    private final String secretKey = "yourSecretKey"; // use a secure secret key
+    @Value("${jwt.expiration}")
+    private Long expiration;
 
-    public String generateToken(User user) {
+    @PostConstruct
+    protected void init() {
+        // Secret key harus di-encode dengan Base64
+        secretKey = Base64.getEncoder().encodeToString(secretKey.getBytes());
+    }
+
+    public String generateToken(String username) {
+        Date now = new Date();
+        Date validity = new Date(now.getTime() + expiration);
+
         return Jwts.builder()
-                .setSubject(user.getEmail())
-                .claim("role", user.getRole())
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 10)) // 10 hours
+                .setSubject(username)
+                .setIssuedAt(now)
+                .setExpiration(validity)
                 .signWith(SignatureAlgorithm.HS256, secretKey)
                 .compact();
     }
 
-    public boolean validateToken(String token, User user) {
-        String username = extractUsername(token);
-        return (username.equals(user.getEmail()) && !isTokenExpired(token));
+    public String extractUsername(String token) {
+        return extractAllClaims(token).getSubject();
     }
 
-    public String extractUsername(String token) {
-        return Jwts.parser()
-                .setSigningKey(secretKey)
-                .parseClaimsJws(token)
-                .getBody()
-                .getSubject();
+    public boolean validateToken(String token, String username) {
+        try {
+            String extractedUsername = extractUsername(token);
+            return extractedUsername.equals(username) && !isTokenExpired(token);
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     private boolean isTokenExpired(String token) {
-        return extractExpiration(token).before(new Date());
+        return extractAllClaims(token).getExpiration().before(new Date());
     }
 
-    private Date extractExpiration(String token) {
+    private Claims extractAllClaims(String token) {
         return Jwts.parser()
                 .setSigningKey(secretKey)
                 .parseClaimsJws(token)
-                .getBody()
-                .getExpiration();
+                .getBody();
     }
 }
 ```
@@ -617,106 +570,12 @@ public class JwtUtil {
 ```java
 package com.polstatstis.digiexam.controller;
 
-import com.polstatstis.digiexam.dto.UserLoginDTO;
-import com.polstatstis.digiexam.dto.UserRegistrationDTO;
-import com.polstatstis.digiexam.dto.UserDTO;
-import com.polstatstis.digiexam.service.AuthService;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-@RestController
-@RequestMapping("/api/auth")
-@RequiredArgsConstructor
-public class AuthController {
-
-    private final AuthService authService;
-
-    @Operation(summary = "User registration.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "User registered successfully", content = {
-                    @Content(mediaType = "application/json", schema = @Schema(implementation = Page.class))}), @ApiResponse(responseCode = "400", description = "Invalid input", content = @Content)})
-
-    @PostMapping("/register")
-    public ResponseEntity<UserDTO> register(@RequestBody UserRegistrationDTO registrationDTO) {
-        UserDTO user = authService.register(registrationDTO);
-        return ResponseEntity.ok(user);
-    }
-
-    @Operation(summary = "User login to get access token.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Email and access token", content = {
-                    @Content(mediaType = "application/json", schema = @Schema(implementation = Page.class))}), @ApiResponse(responseCode = "401", description = "Invalid credentials", content = @Content)})
-
-    @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody UserLoginDTO loginDTO) {
-        String token = authService.login(loginDTO);
-        return ResponseEntity.ok(token);
-    }
-}
-```
-
-```java
-package com.polstatstis.digiexam.controller;
-
-import com.polstatstis.digiexam.dto.UserLoginDTO;
-import com.polstatstis.digiexam.dto.UserRegistrationDTO;
-import com.polstatstis.digiexam.dto.UserDTO;
-import com.polstatstis.digiexam.service.AuthService;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-@RestController
-@RequestMapping("/api/auth")
-@RequiredArgsConstructor
-public class AuthController {
-
-    private final AuthService authService;
-
-    @Operation(summary = "User registration.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "User registered successfully", content = {
-                    @Content(mediaType = "application/json", schema = @Schema(implementation = Page.class))}), @ApiResponse(responseCode = "400", description = "Invalid input", content = @Content)})
-
-    @PostMapping("/register")
-    public ResponseEntity<UserDTO> register(@RequestBody UserRegistrationDTO registrationDTO) {
-        UserDTO user = authService.register(registrationDTO);
-        return ResponseEntity.ok(user);
-    }
-
-    @Operation(summary = "User login to get access token.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Email and access token", content = {
-                    @Content(mediaType = "application/json", schema = @Schema(implementation = Page.class))}), @ApiResponse(responseCode = "401", description = "Invalid credentials", content = @Content)})
-
-    @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody UserLoginDTO loginDTO) {
-        String token = authService.login(loginDTO);
-        return ResponseEntity.ok(token);
-    }
-}
-```
-
-```java
-package com.polstatstis.digiexam.controller;
-
+import com.polstatstis.digiexam.dto.ChangePasswordDTO;
 import com.polstatstis.digiexam.dto.UserDTO;
 import com.polstatstis.digiexam.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -731,7 +590,7 @@ public class UserController {
 
     private final UserService userService;
 
-    @Operation(summary = "Get user by id")
+    @Operation(summary = "Mendapatkan profil pengguna")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Found the user",
             content = { @Content(mediaType = "application/json",
@@ -745,7 +604,7 @@ public class UserController {
         return ResponseEntity.ok(user);
     }
 
-    @Operation(summary = "Update user profile")
+    @Operation(summary = "Update profil pengguna")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "User profile updated",
             content = { @Content(mediaType = "application/json",
@@ -759,7 +618,23 @@ public class UserController {
         return ResponseEntity.ok(updatedUser);
     }
 
-    @Operation(summary = "Delete user")
+    @Operation(summary = "Mengganti password oleh pengguna")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Password changed successfully",
+                    content = { @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = UserDTO.class)) }),
+            @ApiResponse(responseCode = "400", description = "Invalid old password",
+                    content = @Content),
+            @ApiResponse(responseCode = "404", description = "User not found",
+                    content = @Content) })
+
+    @PutMapping("/{id}/change-password")
+    public ResponseEntity<Void> changePassword(@PathVariable Long id, @RequestBody ChangePasswordDTO changePasswordDTO) {
+        userService.changePassword(id, changePasswordDTO);
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(summary = "Delete user oleh admin")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "204", description = "User deleted",
             content = @Content),
@@ -771,108 +646,21 @@ public class UserController {
         userService.deleteUser(id);
         return ResponseEntity.noContent().build();
     }
-}
-```
 
-```java
-package com.polstatstis.digiexam.controller;
-
-import com.polstatstis.digiexam.dto.ExamDTO;
-import com.polstatstis.digiexam.service.ExamService;
-import io.swagger.v3.oas.annotations.Operation;
-import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-
-import java.util.List;
-
-@RestController
-@RequestMapping("/api/exams")
-@RequiredArgsConstructor
-public class ExamController {
-
-    private final ExamService examService;
-
-    @Operation(summary = "Create an exam")
+    @Operation(summary = "Mengubah role pengguna oleh admin")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Exam created successfully"),
-        @ApiResponse(responseCode = "400", description = "Invalid input"),
-        @ApiResponse(responseCode = "500", description = "Server error")
-    })
+            @ApiResponse(responseCode = "200", description = "User role changed successfully",
+                    content = { @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = UserDTO.class)) }),
+            @ApiResponse(responseCode = "404", description = "User not found",
+                    content = @Content) })
 
-    @PostMapping
-    public ResponseEntity<ExamDTO> createExam(@RequestBody ExamDTO examDTO) {
-        ExamDTO createdExam = examService.createExam(examDTO);
-        return ResponseEntity.ok(createdExam);
-    }
-
-    @Operation(summary = "Get all exams")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Exams retrieved successfully"),
-        @ApiResponse(responseCode = "500", description = "Server error")
-    })
-
-    @GetMapping
-    public ResponseEntity<List<ExamDTO>> getAllExams() {
-        List<ExamDTO> exams = examService.getAllExams();
-        return ResponseEntity.ok(exams);
-    }
-
-    @Operation(summary = "Get exam by ID")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Exam retrieved successfully"),
-        @ApiResponse(responseCode = "404", description = "Exam not found"),
-        @ApiResponse(responseCode = "500", description = "Server error")
-    })
-
-    @GetMapping("/{id}")
-    public ResponseEntity<ExamDTO> getExamById(@PathVariable Long id) {
-        ExamDTO exam = examService.getExamById(id);
-        return ResponseEntity.ok(exam);
-    }
-
-    @Operation(summary = "Update an exam")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Exam updated successfully"),
-        @ApiResponse(responseCode = "404", description = "Exam not found"),
-        @ApiResponse(responseCode = "500", description = "Server error")
-    })
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteExam(@PathVariable Long id) {
-        examService.deleteExam(id);
-        return ResponseEntity.noContent().build();
+    @PutMapping("/{id}/role")
+    public ResponseEntity<UserDTO> changeUserRole(@PathVariable Long id, @RequestBody UserDTO userDTO) {
+        UserDTO updatedUser = userService.changeUserRole(id, userDTO);
+        return ResponseEntity.ok(updatedUser);
     }
 }
 ```
 
 ```java
-package com.polstatstis.digiexam.exception;
-
-public class JwtAuthenticationException extends RuntimeException {
-    public JwtAuthenticationException(String message) {
-        super(message);
-    }
-}
-```
-
-```java
-package com.polstatstis.digiexam;
-
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-
-@SpringBootApplication
-public class DigiexamApplication {
-
-	public static void main(String[] args) {
-		SpringApplication.run(DigiexamApplication.class, args);
-	}
-
-}
-```
