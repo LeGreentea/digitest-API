@@ -31,7 +31,8 @@ public class ExamController {
         @ApiResponse(responseCode = "500", description = "Server error")
     })
 
-    @PreAuthorize("hasRole('LECTURER')")
+    // preauthorize only admin and lecturer can create exam
+    @PreAuthorize("hasRole('ADMIN') or hasRole('LECTURER')")
     @PostMapping
     public ResponseEntity<ExamDTO> createExam(@RequestBody ExamDTO examDTO, @RequestParam Long userId) {
         ExamDTO createdExam = examService.createExam(examDTO, userId);
@@ -44,6 +45,8 @@ public class ExamController {
         @ApiResponse(responseCode = "500", description = "Server error")
     })
 
+    // preauthorize only admin and lecturer can get all exams
+    @PreAuthorize("hasRole('ADMIN') or hasRole('LECTURER')")
     @GetMapping
     public ResponseEntity<List<ExamDTO>> getAllExams() {
         List<ExamDTO> exams = examService.getAllExams();
@@ -70,6 +73,8 @@ public class ExamController {
         @ApiResponse(responseCode = "500", description = "Server error")
     })
 
+    // preauthorize only admin and lecturer can delete exam
+    @PreAuthorize("hasRole('ADMIN') or hasRole('LECTURER')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteExam(@PathVariable Long id) {
         examService.deleteExam(id);
@@ -85,6 +90,7 @@ public class ExamController {
                     content = @Content)
     })
 
+    @PreAuthorize("hasRole('STUDENT')")
     @PostMapping("/{id}/submit")
     public ResponseEntity<ExamResultDTO> submitExam(@PathVariable Long id, @RequestBody ExamSubmissionDTO submission) {
         ExamResultDTO result = examService.submitExam(id, submission);

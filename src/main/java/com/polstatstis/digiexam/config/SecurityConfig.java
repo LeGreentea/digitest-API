@@ -37,7 +37,6 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/docs/**").permitAll()
-                        .requestMatchers("/api/questions/**").hasAnyRole("ADMIN, LECTURER")
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())

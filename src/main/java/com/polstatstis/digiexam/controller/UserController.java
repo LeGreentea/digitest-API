@@ -42,6 +42,7 @@ public class UserController {
         @ApiResponse(responseCode = "404", description = "User not found",
             content = @Content) })
 
+    @PreAuthorize("#id == authentication.principal.id or hasRole('ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<UserDTO> updateUserProfile(@PathVariable Long id, @RequestBody UserDTO userDTO) {
         UserDTO updatedUser = userService.updateUserProfile(id, userDTO);
@@ -58,6 +59,7 @@ public class UserController {
             @ApiResponse(responseCode = "404", description = "User not found",
                     content = @Content) })
 
+    @PreAuthorize("#id == authentication.principal.id")
     @PutMapping("/{id}/change-password")
     public ResponseEntity<Void> changePassword(@PathVariable Long id, @RequestBody ChangePasswordDTO changePasswordDTO) {
         userService.changePassword(id, changePasswordDTO);
@@ -71,6 +73,7 @@ public class UserController {
         @ApiResponse(responseCode = "404", description = "User not found",
             content = @Content) })
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
@@ -85,6 +88,7 @@ public class UserController {
             @ApiResponse(responseCode = "404", description = "User not found",
                     content = @Content) })
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}/role")
     public ResponseEntity<UserDTO> changeUserRole(@PathVariable Long id, @RequestBody UserDTO userDTO) {
         UserDTO updatedUser = userService.changeUserRole(id, userDTO);
