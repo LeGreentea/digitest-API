@@ -1,10 +1,10 @@
 package com.polstatstis.digiexam.security;
 
+import jakarta.servlet.ServletException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
 
-import jakarta.servlet.ServletException;
 import java.io.IOException;
 
 @Component

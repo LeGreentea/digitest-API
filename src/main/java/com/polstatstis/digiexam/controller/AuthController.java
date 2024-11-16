@@ -1,8 +1,8 @@
 package com.polstatstis.digiexam.controller;
 
+import com.polstatstis.digiexam.dto.UserDTO;
 import com.polstatstis.digiexam.dto.UserLoginDTO;
 import com.polstatstis.digiexam.dto.UserRegistrationDTO;
-import com.polstatstis.digiexam.dto.UserDTO;
 import com.polstatstis.digiexam.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -12,7 +12,10 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/auth")

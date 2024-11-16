@@ -7,7 +7,7 @@ import java.util.Collection;
 
 public class CustomUserDetails implements UserDetails {
 
-    private String username;
+    private final String username;
 
     public CustomUserDetails(String username) {
         this.username = username;
