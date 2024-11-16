@@ -17,7 +17,6 @@ Proyek ini adalah sistem Manajemen Ujian Online dan Bank Soal yang dikembangkan 
 - **Dokumentasi API**: Swagger
 
 ## Struktur Direktori
-```
 src/main/java/com/polstatstis/digiexam 
 ├── config/
 │   └── SecurityConfig.java
@@ -72,4 +71,3 @@ src/main/java/com/polstatstis/digiexam
 │   ├── UsersDetailsServiceImpl.java
 │   └── UserService.java
 └── DIgiexamApplication.java
-```
