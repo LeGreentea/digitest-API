@@ -17,6 +17,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
@@ -26,9 +28,14 @@ public class AuthController {
 
     @Operation(summary = "registrasi pengguna.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "User registered successfully", content = {
-                    @Content(mediaType = "application/json", schema = @Schema(implementation = Page.class))}), @ApiResponse(responseCode = "400", description = "Invalid input", content = @Content)})
-
+            @ApiResponse(responseCode = "200",
+                    description = "User registered successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = UserDTO.class))),
+            @ApiResponse(responseCode = "400",
+                    description = "Invalid input",
+                    content = @Content)
+    })
     @PostMapping("/register")
     public ResponseEntity<UserDTO> register(@RequestBody UserRegistrationDTO registrationDTO) {
         UserDTO user = authService.register(registrationDTO);
@@ -41,8 +48,10 @@ public class AuthController {
                     @Content(mediaType = "application/json", schema = @Schema(implementation = Page.class))}), @ApiResponse(responseCode = "401", description = "Invalid credentials", content = @Content)})
 
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody UserLoginDTO loginDTO) {
-        String token = authService.login(loginDTO);
-        return ResponseEntity.ok(token);
+    public ResponseEntity<Map<String, Object>> login(@RequestBody UserLoginDTO loginDTO) {
+        // Assuming authService.login returns a Map<String, Object>
+        Map<String, Object> response = authService.login(loginDTO);
+        return ResponseEntity.ok(response);
     }
+
 }

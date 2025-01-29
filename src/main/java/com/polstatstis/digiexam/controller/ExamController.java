@@ -38,6 +38,22 @@ public class ExamController {
         return ResponseEntity.ok(createdExam);
     }
 
+    @Operation(summary = "Update exam with new question")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Exam updated successfully"),
+            @ApiResponse(responseCode = "404", description = "Exam not found"),
+            @ApiResponse(responseCode = "500", description = "Server error")
+    })
+    @PreAuthorize("hasRole('ADMIN') or hasRole('LECTURER')")
+    @PutMapping("/{id}/questions")
+    public ResponseEntity<ExamDTO> addQuestionToExam(
+            @PathVariable Long id,
+            @RequestParam Long questionId) {
+        ExamDTO updatedExam = examService.addQuestionToExam(id, questionId);
+        return ResponseEntity.ok(updatedExam);
+    }
+
+
     @Operation(summary = "mendapatkan semua ujian")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Exams retrieved successfully"),
@@ -45,7 +61,7 @@ public class ExamController {
     })
 
     // preauthorize only admin and lecturer can get all exams
-    @PreAuthorize("hasRole('ADMIN') or hasRole('LECTURER')")
+    @PreAuthorize("hasRole('STUDENT') or hasRole('LECTURER')")
     @GetMapping
     public ResponseEntity<List<ExamDTO>> getAllExams() {
         List<ExamDTO> exams = examService.getAllExams();

@@ -1,23 +1,22 @@
 package com.polstatstis.digiexam.repository;
 
 import com.polstatstis.digiexam.entity.Question;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
+@Repository
 public interface QuestionRepository extends JpaRepository<Question, Long> {
-    @Operation(summary = "Find questions by user ID")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Found questions",
-                    content = {@Content(mediaType = "application/json",
-                            schema = @Schema(implementation = Question.class))}),
-            @ApiResponse(responseCode = "404", description = "Questions not found",
-                    content = @Content)})
-
     List<Question> findByCreatedById(Long userId);
+
+    // Add these methods
+    Optional<Question> findByIdAndExamId(Long id, Long examId);
+
+    // Alternative method using @Query for more complex queries if needed
+    @Query("SELECT q FROM Question q WHERE q.id = :questionId AND q.exam.id = :examId")
+    Optional<Question> findQuestionInExam(@Param("questionId") Long questionId, @Param("examId") Long examId);
 }

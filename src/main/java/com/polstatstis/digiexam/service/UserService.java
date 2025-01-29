@@ -7,59 +7,76 @@ import com.polstatstis.digiexam.exception.UserNotFoundException;
 import com.polstatstis.digiexam.mapper.UserMapper;
 import com.polstatstis.digiexam.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Collections;
 
 @Service
 @RequiredArgsConstructor
 public class UserService {
 
+    private static final Logger logger = LoggerFactory.getLogger(UserService.class);
+
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public UserDTO getUserProfile(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException("User not found"));
-        return UserMapper.toDTO(user);
+    public User findById(Long id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new UserNotFoundException("User not found with id " + id));
     }
 
+    public UserDTO getUserProfile(Long userId) {
+        logger.info("Fetching user profile for user ID: {}", userId);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
+        logger.info("Found user: {}", user);
+        UserDTO dto = UserMapper.toDTO(user);
+        return dto;
+    }
+
+    @Transactional
     public UserDTO updateUserProfile(Long userId, UserDTO userDTO) {
+        logger.info("Updating user profile for user ID: {}", userId);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
         user.setName(userDTO.getName());
         user.setEmail(userDTO.getEmail());
+        user.setRole(User.Role.valueOf(userDTO.getRole()));
         userRepository.save(user);
         return UserMapper.toDTO(user);
     }
 
+    @Transactional
     public UserDTO changeUserRole(Long id, UserDTO userDTO) {
+        logger.info("Changing user role for user ID: {}", id);
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
 
-        // Konversi String ke enum Role
         User.Role newRole;
         try {
             newRole = User.Role.valueOf(userDTO.getRole().toUpperCase());
         } catch (IllegalArgumentException e) {
+            logger.error("Invalid role provided: {}", userDTO.getRole(), e);
             throw new RuntimeException("Invalid role: " + userDTO.getRole());
         }
 
-        // Ubah role pengguna
         user.setRole(newRole);
-
-        // Simpan perubahan ke database
         userRepository.save(user);
-
-        // Kembalikan userDTO yang telah diperbarui
-        userDTO.setId(user.getId());
-        return userDTO;
+        return UserMapper.toDTO(user);
     }
 
+    @Transactional
     public void changePassword(Long userId, ChangePasswordDTO changePasswordDTO) {
+        logger.info("Changing password for user ID: {}", userId);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
 
         if (!passwordEncoder.matches(changePasswordDTO.getOldPassword(), user.getPassword())) {
+            logger.error("Invalid old password provided for user ID: {}", userId);
             throw new IllegalArgumentException("Invalid old password");
         }
 
@@ -67,8 +84,11 @@ public class UserService {
         userRepository.save(user);
     }
 
+    @Transactional
     public void deleteUser(Long userId) {
+        logger.info("Deleting user with ID: {}", userId);
         if (!userRepository.existsById(userId)) {
+            logger.error("User not found with ID: {}", userId);
             throw new UserNotFoundException("User not found");
         }
         userRepository.deleteById(userId);

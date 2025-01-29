@@ -14,6 +14,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -23,17 +26,19 @@ public class AuthService {
     private final JwtService jwtService;
     private static final Logger logger = LoggerFactory.getLogger(AuthService.class);
 
+    // Method to handle user registration
     public UserDTO register(UserRegistrationDTO registrationDTO) {
-        // Validasi email sudah terdaftar
+        // Validate if email is already registered
         if (userRepository.existsByEmail(registrationDTO.getEmail().trim().toLowerCase())) {
             throw new IllegalArgumentException("Email already registered");
         }
 
+        // Build and save the new user
         User user = User.builder()
                 .email(registrationDTO.getEmail().trim().toLowerCase())
                 .password(passwordEncoder.encode(registrationDTO.getPassword()))
                 .name(registrationDTO.getName())
-                .role(User.Role.USER)
+                .role(User.Role.USER)  // Set the default role to USER
                 .build();
 
         User savedUser = userRepository.save(user);
@@ -41,22 +46,31 @@ public class AuthService {
         return UserMapper.toDTO(savedUser);
     }
 
-    public String login(UserLoginDTO loginDTO) {
+    // Method to handle user login
+    public Map<String, Object> login(UserLoginDTO loginDTO) {
         String email = loginDTO.getEmail().trim().toLowerCase();
 
+        // Find user by email
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> {
                     logger.error("Login attempt failed: User not found with email: {}", email);
                     return new UserNotFoundException("User not found");
                 });
 
+        // Validate password
         if (!passwordEncoder.matches(loginDTO.getPassword(), user.getPassword())) {
             logger.error("Login attempt failed: Invalid password for user: {}", email);
             throw new IllegalArgumentException("Invalid password");
         }
 
+        // Generate JWT token
         String token = jwtService.generateToken(user.getEmail());
         logger.info("User logged in successfully: {}", email);
-        return token;
+
+        // Prepare response map
+        Map<String, Object> response = new HashMap<>();
+        response.put("token", token);
+        response.put("id", user.getId());
+        return response;
     }
 }

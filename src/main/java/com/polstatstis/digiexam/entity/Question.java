@@ -1,20 +1,19 @@
 package com.polstatstis.digiexam.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
-import java.util.List;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@SuperBuilder
+@EqualsAndHashCode(callSuper = false)  // No need to call super here
 @Entity
 @Table(name = "questions")
-public class Question {
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@DiscriminatorColumn(name = "question_type", discriminatorType = DiscriminatorType.STRING)
+public abstract class Question {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -23,18 +22,18 @@ public class Question {
     @Column(nullable = false)
     private String text;
 
-    @ElementCollection
-    @CollectionTable(
-            name = "question_options",
-            joinColumns = @JoinColumn(name = "question_id")
-    )
-    @Column(name = "option_text")  // Diubah dari 'option' menjadi 'option_text'
-    private List<String> options;
-
-    @Column(nullable = false)
-    private String answer;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "question_type", nullable = false, insertable = false, updatable = false)
+    private QuestionType questionType;
 
     @ManyToOne
     @JoinColumn(name = "created_by", nullable = false)
     private User createdBy;
+
+    @ManyToOne
+    @JoinColumn(name = "exam_id")
+    private Exam exam;
+
+    // Abstract method to be implemented by subclasses
+    public abstract String getAnswer();
 }
